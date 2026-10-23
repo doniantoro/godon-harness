@@ -24,6 +24,7 @@ const (
 	exitFail      = 1
 	exitUsage     = 2
 	exitNoTests   = 3
+	exitNoChanges = 3 // godon diff: nothing changed
 	exitToolError = 4
 )
 
@@ -37,7 +38,9 @@ Usage:
   godon test --all
   godon test --integration [packages...] [-run REGEX] [-focus REGEX] [-label EXPR]
   godon symbol <Name|Type.Name> [path] [max] [--doc] [--tests]
+  godon context <Name|Type.Name> [path]
   godon check [--no-lint]
+  godon diff [--staged] [rev] [paths...]
   godon hook format|stop|session-start      (called by agent hooks, reads stdin)
   godon version
 
@@ -61,8 +64,12 @@ func run(ctx context.Context, args []string, stdin io.Reader, stdout, stderr io.
 		return cmdTest(ctx, args[1:], stdout, stderr)
 	case "symbol":
 		return cmdSymbol(ctx, args[1:], stdout, stderr)
+	case "context":
+		return cmdContext(ctx, args[1:], stdout, stderr)
 	case "check":
 		return cmdCheck(ctx, args[1:], stdout, stderr)
+	case "diff":
+		return cmdDiff(ctx, args[1:], stdout, stderr)
 	case "hook":
 		return cmdHook(ctx, args[1:], stdin, stderr)
 	case "version", "--version":
