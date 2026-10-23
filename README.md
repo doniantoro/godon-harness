@@ -176,12 +176,11 @@ listing it in `cmd/godon/main.go`.
 
 ## Releasing
 
-1. Change `VERSION` (the binary) and, when skills or hooks changed, the
-   `version` in both `.claude-plugin/plugin.json` and `plugin.json` (they must
-   match; CI checks).
-2. Merge to `main`, then tag that commit `v<VERSION>` and push the tag.
-   The release workflow refuses a tag that does not match `VERSION`, runs the
-   tests and publishes the binaries with GoReleaser.
+1. Tag any commit `v<X.Y.Z>` and push the tag. The release workflow runs
+   the tests and publishes the binaries for that tag with GoReleaser.
+2. To make the launchers use it, run `scripts/bump.sh -b X.Y.Z`, which sets
+   `VERSION` and the `version` in both `.claude-plugin/plugin.json` and
+   `plugin.json` (they must match; CI checks). Merge to `main`.
 
 A change to skills or hooks alone needs no new binary: bump the plugin
-version and leave `VERSION` as it is.
+version with `scripts/bump.sh X.Y.Z` and leave `VERSION` as it is.
