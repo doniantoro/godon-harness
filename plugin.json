@@ -1,6 +1,6 @@
 {
   "name": "godon-harness",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Token-saving harness for AI coding agents: test summaries with classified failures, exact symbol lookup, one-line static checks, and format/gate hooks. Go today; built for more languages.",
   "author": { "name": "doniantoro" },
   "homepage": "https://github.com/doniantoro/godon-harness",
