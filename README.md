@@ -14,6 +14,7 @@ can be added without changing the commands, hooks or skills.
 | `godon symbol` | Where an identifier is declared — functions, methods, types, interface methods, struct fields, consts, vars — one line each, with its owner |
 | `godon check` | gofmt, go vet, mock freshness and golangci-lint, one line each; nothing in the working tree is modified |
 | Hooks | Every edited file is formatted; before a turn ends, `go vet` runs on the packages that changed |
+| `godon-subagents` skill | A gate before delegating: subagents only for large research that splits into four or more independent, read-only parts; at most two at a time; never for edits or small tasks |
 
 All detail goes to `<OS temp dir>/godon/<repository>/`, never into the working
 tree.
@@ -44,8 +45,8 @@ truncated log re-runs the tests to see more. The clean-tree row also hides a
 difference in coverage: `gofmt -l` and `go vet` do not notice a stale
 generated mock, which `godon check` does.
 
-The fixed cost per session is the skill listing, about 200 tokens, plus the
-one-line pointer in `CLAUDE.md`/`AGENTS.md`. A skill's body (350–660 tokens)
+The fixed cost per session is the skill listing, about 260 tokens, plus the
+pointer lines in `CLAUDE.md`/`AGENTS.md`. A skill's body (350–860 tokens)
 loads only in a session that uses it.
 
 Every tool result also stays in the context for the rest of the session and
@@ -103,6 +104,7 @@ Add one line to the repository's `CLAUDE.md` (Claude Code) or `AGENTS.md`
 ```markdown
 Run tests, static checks and declaration lookups through the godon skills
 (godon-test, godon-check, godon-find-code), not raw `go test`, `go vet` or `grep`.
+Before starting any subagent, follow the godon-subagents skill.
 ```
 
 ## Commands
@@ -162,7 +164,7 @@ carry on rather than blocking its turn.
 plugin.json            Codex (portable) manifest
 .agents/plugins/       Codex marketplace
 bin/                   launchers
-skills/                godon-test, godon-find-code, godon-check (shared by both agents)
+skills/                godon-test, godon-find-code, godon-check, godon-subagents (shared by both agents)
 hooks/                 claude.json, codex.json
 cmd/godon/             the CLI
 internal/driver/       the language seam; internal/driver/golang is the Go driver
