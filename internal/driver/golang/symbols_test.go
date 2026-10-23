@@ -29,6 +29,13 @@ type Client struct{}
 func (c *Client) Post(id string) error { return nil }
 
 func Post() {}
+
+func handle() {
+	type localPoster interface {
+		Post(id string) error
+	}
+	var _ localPoster
+}
 `
 
 func writeFile(t *testing.T, root, rel, body string) {
@@ -79,7 +86,13 @@ func TestFindSymbols(t *testing.T) {
 				{"shop/shop.go", "Order.Post", "field"},
 				{"shop/shop.go", "Client.Post", "method"},
 				{"shop/shop.go", "Post", "func"},
+				{"shop/shop.go", "localPoster.Post", "method"},
 			},
+		},
+		{
+			name: "a type declared inside a function body is a declaration too",
+			q:    driver.SymbolQuery{Name: "localPoster"},
+			want: []hit{{"shop/shop.go", "localPoster", "interface"}},
 		},
 		{
 			name: "Type.Name keeps one owner",

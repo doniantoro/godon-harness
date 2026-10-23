@@ -87,6 +87,7 @@ func declarations(fset *token.FileSet, file *ast.File, name string) []driver.Sym
 	for _, decl := range file.Decls {
 		switch d := decl.(type) {
 		case *ast.FuncDecl:
+			localTypes(d.Body, name, add)
 			if d.Name.Name != name {
 				continue
 			}
@@ -118,6 +119,35 @@ func declarations(fset *token.FileSet, file *ast.File, name string) []driver.Sym
 		}
 	}
 	return out
+}
+
+// localTypes finds name among the types declared inside a function body,
+// closures included, and their members. Local variables and constants are
+// left out on purpose: every function has an err and a ctx, and listing them
+// would bury the declarations anyone navigates to.
+func localTypes(body *ast.BlockStmt, name string, add func(token.Pos, string, string)) {
+	if body == nil {
+		return
+	}
+	ast.Inspect(body, func(n ast.Node) bool {
+		ds, ok := n.(*ast.DeclStmt)
+		if !ok {
+			return true
+		}
+		gd, ok := ds.Decl.(*ast.GenDecl)
+		if !ok || gd.Tok != token.TYPE {
+			return true
+		}
+		for _, spec := range gd.Specs {
+			if s, ok := spec.(*ast.TypeSpec); ok {
+				if s.Name.Name == name {
+					add(s.Name.Pos(), "", typeKind(s.Type))
+				}
+				members(s, name, add)
+			}
+		}
+		return true
+	})
 }
 
 // members finds name among a struct's fields or an interface's methods.

@@ -18,6 +18,40 @@ can be added without changing the commands, hooks or skills.
 All detail goes to `<OS temp dir>/godon/<repository>/`, never into the working
 tree.
 
+## What it saves
+
+Measured on a real Go service of 57 packages and ~750 tests. Tokens are
+estimated as characters ÷ 4 of what the agent reads.
+
+| Case | Raw command | godon |
+|---|---:|---:|
+| One test function passes (`go test -v -run`) | 53 | 48 |
+| One package passes (`go test -v`) | 2,880 | 48 |
+| Whole suite passes (`go test ./...`) | 2,794 | 47 |
+| Whole suite passes (`go test -v ./...`) | 33,743 | 47 |
+| Two Ginkgo specs fail (`-ginkgo.v`) | 799 | 83, or 425 with one failure file read |
+| Two small `t.Errorf` failures | 89 | 125 |
+| Declaration lookup, rare name (`grep -rn`) | 1,214 | 75 |
+| Declaration lookup, field name used in 13 types | 4,767 | 274 |
+| Declaration lookup, `Error` | 60,742 | 246 |
+| Static checks, clean tree (`gofmt -l` + `go vet`) | 22 | 64 |
+
+Where the raw output is already tiny — one passing test, a two-line
+assertion, a clean `go vet` — godon's summary line and file paths cost a few
+dozen tokens more. Where it is not, godon is 20–700× smaller, and the raw
+column is often worse than shown: an agent that cannot find the cause in a
+truncated log re-runs the tests to see more. The clean-tree row also hides a
+difference in coverage: `gofmt -l` and `go vet` do not notice a stale
+generated mock, which `godon check` does.
+
+The fixed cost per session is the skill listing, about 200 tokens, plus the
+one-line pointer in `CLAUDE.md`/`AGENTS.md`. A skill's body (350–660 tokens)
+loads only in a session that uses it.
+
+Every tool result also stays in the context for the rest of the session and
+is sent again with each later turn, so a log read once early in a task is paid
+for many times over. That repetition is where most of the saving comes from.
+
 ## Requirements
 
 - The Go toolchain and git, as for any Go repository.
