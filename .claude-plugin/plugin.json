@@ -5,6 +5,7 @@
   "author": { "name": "doniantoro" },
   "homepage": "https://github.com/doniantoro/godon-harness",
   "repository": "https://github.com/doniantoro/godon-harness",
+  "license": "MPL-2.0",
   "keywords": ["go", "testing", "harness", "tokens", "hooks"],
   "hooks": "./hooks/claude.json"
 }
