@@ -1,0 +1,96 @@
+#!/bin/sh
+# godon launcher (Linux, macOS, and Git Bash on Windows).
+#
+# Fetches the godon release pinned in ../VERSION for this OS and CPU on
+# first use, verifies it against the release's checksums.txt, caches it, and
+# runs it with the given arguments. It holds no other logic: everything godon
+# does lives in the Go binary, so it behaves the same on every platform.
+#
+# Environment:
+#   GODON_BIN          run this binary instead (development, offline machines)
+#   GODON_CACHE        cache directory (default: $XDG_CACHE_HOME/godon or ~/.cache/godon)
+#   GODON_RELEASE_URL  download base URL (default: the GitHub release of VERSION)
+#
+# This file is on Claude Code's PATH while the plugin is enabled, so it must
+# never look `godon` up on PATH itself: it would find, and run, itself.
+set -eu
+
+repo="doniantoro/godon-harness"
+
+if [ -n "${GODON_BIN:-}" ]; then
+    exec "$GODON_BIN" "$@"
+fi
+
+here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+version=$(tr -d ' \r\n' <"$here/../VERSION")
+
+# A hook must not break the agent's turn because godon could not be fetched;
+# say why once on stderr and let the agent carry on.
+fail() {
+    echo "godon: $1" >&2
+    echo "godon: fetch it once with network access by running: \"$here/godon\" version" >&2
+    echo "godon: or point GODON_BIN at a godon binary (go install github.com/$repo/cmd/godon@v$version)" >&2
+    if [ "${first_arg:-}" = hook ]; then exit 0; fi
+    exit 4
+}
+first_arg=${1:-}
+
+case "$(uname -s)" in
+    Linux) os=linux ;;
+    Darwin) os=darwin ;;
+    MINGW* | MSYS* | CYGWIN*) os=windows ;;
+    *) fail "unsupported operating system: $(uname -s)" ;;
+esac
+case "$(uname -m)" in
+    x86_64 | amd64) arch=amd64 ;;
+    arm64 | aarch64) arch=arm64 ;;
+    *) fail "unsupported CPU: $(uname -m)" ;;
+esac
+ext=""
+[ "$os" = windows ] && ext=".exe"
+
+asset="godon_${os}_${arch}${ext}"
+cache="${GODON_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/godon}/$version"
+bin="$cache/$asset"
+
+if [ ! -x "$bin" ]; then
+    base="${GODON_RELEASE_URL:-https://github.com/$repo/releases/download/v$version}"
+    mkdir -p "$cache"
+    tmp="$bin.tmp.$$"
+    sums="$cache/checksums.txt.$$"
+    trap 'rm -f "$tmp" "$sums"' EXIT
+
+    fetch() {
+        if command -v curl >/dev/null 2>&1; then
+            curl -fsL --retry 2 "$1" -o "$2"
+        elif command -v wget >/dev/null 2>&1; then
+            wget -q "$1" -O "$2"
+        else
+            return 127
+        fi
+    }
+    sha256() {
+        if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$1" | cut -d' ' -f1
+        elif command -v shasum >/dev/null 2>&1; then
+            shasum -a 256 "$1" | cut -d' ' -f1
+        else
+            openssl dgst -sha256 -r "$1" | cut -d' ' -f1
+        fi
+    }
+
+    fetch "$base/$asset" "$tmp" || fail "could not download $base/$asset"
+    fetch "$base/checksums.txt" "$sums" || fail "could not download $base/checksums.txt"
+    want=$(awk -v a="$asset" '$2 == a || $2 == "*" a { print $1 }' "$sums")
+    got=$(sha256 "$tmp")
+    [ -n "$want" ] || fail "checksums.txt has no entry for $asset"
+    [ "$want" = "$got" ] || fail "checksum mismatch for $asset (want $want, got $got)"
+
+    chmod +x "$tmp"
+    mv -f "$tmp" "$bin" # atomic within one directory: concurrent launchers are safe
+    # exec below replaces this shell, so the EXIT trap never runs: clean up now.
+    rm -f "$sums"
+    trap - EXIT
+fi
+
+exec "$bin" "$@"

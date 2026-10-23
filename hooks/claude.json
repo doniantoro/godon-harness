@@ -1,0 +1,27 @@
+{
+  "description": "godon: fetch the binary at session start, format each edited file, and gate the end of a turn on the changed packages.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/godon\" hook session-start", "timeout": 120 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/godon\" hook format", "timeout": 30 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/godon\" hook stop", "timeout": 120 }
+        ]
+      }
+    ]
+  }
+}

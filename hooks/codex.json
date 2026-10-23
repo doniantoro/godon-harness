@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT}/bin/godon\" hook session-start",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/bin/godon.ps1\" hook session-start",
+            "statusMessage": "godon: preparing",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT}/bin/godon\" hook format",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/bin/godon.ps1\" hook format",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${PLUGIN_ROOT}/bin/godon\" hook stop",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${PLUGIN_ROOT}/bin/godon.ps1\" hook stop",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

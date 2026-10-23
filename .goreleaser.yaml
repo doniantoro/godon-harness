@@ -1,0 +1,30 @@
+# Builds the binaries the launchers download: one raw executable per OS and
+# CPU, named godon_<os>_<arch>[.exe], plus checksums.txt. bin/godon and
+# bin/godon.ps1 depend on exactly these names — change both together.
+version: 2
+
+project_name: godon
+
+builds:
+  - id: godon
+    main: ./cmd/godon
+    binary: godon
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: raw
+    formats: [binary]
+    name_template: "godon_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  use: github

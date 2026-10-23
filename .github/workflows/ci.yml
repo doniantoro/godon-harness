@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: go vet ./...
+      - run: go test ./...
+
+      - name: Build godon
+        shell: bash
+        run: go build -o "$RUNNER_TEMP/godon$(go env GOEXE)" ./cmd/godon
+
+      # The launchers with GODON_BIN skip the download, so this checks that
+      # they start, forward arguments and stdin, and pass the exit code back.
+      - name: sh launcher
+        shell: bash
+        env:
+          GODON_BIN: ${{ runner.temp }}/godon${{ runner.os == 'Windows' && '.exe' || '' }}
+        run: |
+          ./bin/godon version
+          echo '{"tool_name":"Bash","tool_input":{"command":"ls"}}' | ./bin/godon hook format
+          set +e; ./bin/godon no-such-command; code=$?; set -e
+          test "$code" = 2
+
+      - name: PowerShell launcher
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GODON_BIN: ${{ runner.temp }}\godon.exe
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File bin/godon.ps1 version
+          '{"stop_hook_active":true}' | powershell -NoProfile -ExecutionPolicy Bypass -File bin/godon.ps1 hook stop
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JSON parses and versions agree
+        run: |
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json plugin.json \
+                   .agents/plugins/marketplace.json hooks/claude.json hooks/codex.json; do
+            jq empty "$f"
+          done
+          a=$(jq -r .version .claude-plugin/plugin.json)
+          b=$(jq -r .version plugin.json)
+          if [ "$a" != "$b" ]; then
+            echo "::error::plugin version differs: .claude-plugin/plugin.json $a, plugin.json $b"
+            exit 1
+          fi

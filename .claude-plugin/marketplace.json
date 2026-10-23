@@ -1,0 +1,12 @@
+{
+  "name": "godon-harness",
+  "owner": { "name": "doniantoro" },
+  "description": "The godon harness for Claude Code.",
+  "plugins": [
+    {
+      "name": "godon-harness",
+      "source": "./",
+      "description": "Test summaries with classified failures, exact symbol lookup, one-line static checks, and format/gate hooks."
+    }
+  ]
+}
