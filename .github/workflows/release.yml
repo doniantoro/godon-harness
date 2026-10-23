@@ -1,7 +1,7 @@
 name: release
 
-# A tag vX.Y.Z publishes the binaries that VERSION X.Y.Z points the
-# launchers at. Bump VERSION, merge, then tag that commit.
+# Any tag v* publishes binaries for that tag. The launchers download the
+# release named in VERSION, so point VERSION at a tag once it is released.
 on:
   push:
     tags: ["v*"]
@@ -16,14 +16,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: VERSION matches the tag
-        run: |
-          want="v$(tr -d ' \r\n' < VERSION)"
-          if [ "$want" != "$GITHUB_REF_NAME" ]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match VERSION ($want)"
-            exit 1
-          fi
 
       - uses: actions/setup-go@v5
         with:
