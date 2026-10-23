@@ -289,6 +289,9 @@ listing it in `cmd/godon/main.go`.
 
 1. Tag any commit `v<X.Y.Z>` and push the tag. The release workflow runs
    the tests and publishes the binaries for that tag with GoReleaser.
+   A failed or cancelled release triggers a cleanup job that removes any
+   partial GitHub Release and deletes the tag. This rollback is best-effort:
+   a GitHub outage or repository tag rules can prevent deletion.
 2. To make the launchers use it, run `scripts/bump.sh -b X.Y.Z`, which sets
    `VERSION` and the `version` in both `.claude-plugin/plugin.json` and
    `plugin.json` (they must match; CI checks). Merge to `main`.
